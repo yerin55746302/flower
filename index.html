@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polar Flower</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.3.1/p5.js"></script>
+  <style>
+     @font-face {
+    font-family: 'Pretendard-Regular';
+    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    }
+
+    body {
+      background-color: #262626;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Pretendard-Regular'
+    }
+
+    .canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+     .text {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+   <div class="text">꽃을 클릭해보세요.</div>
+  <script>
+    let v = [];
+    let rows = 60, cols = 120;
+    let canvas;
+
+    let petalLength = 20;
+    let targetPetalLength = 20;
+    let curvature2 = 0;
+    let targetCurvature2 = 0;
+
+    const petalNum = 6;          
+    const flowerDiameter = 200;  
+    const petalSharpness = 0.4;  
+    const flowerHeight = 300;    
+    const curvature1 = 0.8;      
+    const bumpiness = 2.5;       
+    const bumpNum = 10;     
+
+    function setup() {
+      canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+      canvas.class("canvas");
+
+      colorMode(HSB, 360, 100, 100);
+      angleMode(DEGREES);
+      noStroke();
+
+      camera(0, 0, 800, 0, 0, 0, 0, 1, 0); 
+
+      canvas.mouseClicked(animateFlower); 
+    }
+
+    function draw() {
+      clear();
+      orbitControl(4, 4);
+      rotateX(60);
+      translate(0, 100, 0);  
+
+      // 애니메이션 처리
+      petalLength = lerp(petalLength, targetPetalLength, 0.05);
+      curvature2 = lerp(curvature2, targetCurvature2, 0.05);
+
+      for (let theta = 0; theta < rows; theta++) {
+        v.push([]);
+        for (let phi = 0; phi < cols; phi++) {
+          let r = (petalLength * pow(abs(sin(petalNum / 2 * phi * 360 / cols)), petalSharpness) + flowerDiameter) * theta / rows;
+          let x = r * cos(phi * 360 / cols);
+          let y = r * sin(phi * 360 / cols);
+          let z = vShape(flowerHeight, r / 100, curvature1, curvature2, 1.5) - 200 +
+            bumpinessEffect(bumpiness, r / 100, bumpNum, phi * 360 / cols);
+
+          let pos = createVector(x, y, z);
+          v[theta].push(pos);
+        }
+      }
+
+      for (let theta = 0; theta < v.length; theta++) {
+        fill(210, 100 - theta, 100);
+        for (let phi = 0; phi < v[theta].length; phi++) {
+          if (theta < v.length - 1 && phi < v[theta].length - 1) {
+            beginShape();
+            vertex(v[theta][phi].x, v[theta][phi].y, v[theta][phi].z);
+            vertex(v[theta + 1][phi].x, v[theta + 1][phi].y, v[theta + 1][phi].z);
+            vertex(v[theta + 1][phi + 1].x, v[theta + 1][phi + 1].y, v[theta + 1][phi + 1].z);
+            vertex(v[theta][phi + 1].x, v[theta][phi + 1].y, v[theta][phi + 1].z);
+            endShape(CLOSE);
+          } else if (theta < v.length - 1 && phi == v[theta].length - 1) {
+            beginShape();
+            vertex(v[theta][phi].x, v[theta][phi].y, v[theta][phi].z);
+            vertex(v[theta][0].x, v[theta][0].y, v[theta][0].z);
+            vertex(v[theta + 1][0].x, v[theta + 1][0].y, v[theta + 1][0].z);
+            vertex(v[theta + 1][phi].x, v[theta + 1][phi].y, v[theta + 1][phi].z);
+            endShape(CLOSE);
+          }
+        }
+      }
+
+      v = [];
+
+      drawSphere();
+    }
+
+    function animateFlower() {
+      targetPetalLength = 60;
+      targetCurvature2 = 0.3;
+    }
+
+    function vShape(A, r, a, b, c) {
+      return A * pow(Math.E, -b * pow(abs(r), c)) * pow(abs(r), a);
+    }
+
+    function bumpinessEffect(A, r, f, angle) {
+      return 1 + A * pow(r, 2) * sin(f * angle);
+    }
+
+    function drawSphere() {
+      push();
+      translate(0, 0, 50); 
+      fill('#FFF98F');
+      sphere(50); 
+      pop();
+    }
+  </script>
+</body>
+</html>
